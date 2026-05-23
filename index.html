@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABO 血型系统 — 费曼学习法</title>
+<style>
+:root {
+  --bg: #0f0f14;
+  --surface: #1a1a24;
+  --surface2: #222230;
+  --text: #e8e8f0;
+  --text2: #a0a0b8;
+  --accent: #ff6b6b;
+  --accent2: #ffa94d;
+  --blood-o: #845ef7;
+  --blood-a: #4dabf7;
+  --blood-b: #f06595;
+  --blood-ab: #20c997;
+  --yes: #51cf66;
+  --no: #ff6b6b;
+  --gold: #fcc419;
+  --radius: 12px;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* Navigation */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(15,15,20,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 0 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+nav .logo { font-weight: 700; font-size: 1.1rem; }
+nav .logo span { color: var(--accent); }
+nav .links { display: flex; gap: 1.5rem; }
+nav .links a {
+  color: var(--text2); text-decoration: none; font-size: 0.9rem;
+  transition: color var(--transition);
+}
+nav .links a:hover { color: var(--text); }
+
+/* Hero */
+.hero {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  padding: 6rem 2rem 4rem;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(132,94,247,0.08) 0%, transparent 70%),
+              radial-gradient(ellipse at 30% 60%, rgba(240,101,149,0.05) 0%, transparent 60%);
+}
+.hero h1 {
+  font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 800;
+  line-height: 1.1; margin-bottom: 1rem; position: relative;
+}
+.hero h1 .feynman { color: var(--gold); }
+.hero .subtitle {
+  font-size: 1.2rem; color: var(--text2); max-width: 560px; position: relative;
+  margin-bottom: 2.5rem;
+}
+.hero .scroll-hint {
+  position: absolute; bottom: 2rem;
+  animation: bounce 2s infinite;
+  opacity: 0.5;
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Sections */
+section { padding: 5rem 2rem; max-width: 900px; margin: 0 auto; }
+.section-title {
+  font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.section-title .num {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-size: 1.1rem; font-weight: 700; flex-shrink: 0;
+}
+.section-desc { color: var(--text2); margin-bottom: 2rem; font-size: 1.05rem; }
+
+/* Cards */
+.card {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 2rem; margin-bottom: 1.5rem;
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+/* Blood type grid */
+.blood-types-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1rem; margin: 2rem 0;
+}
+@media (max-width: 640px) { .blood-types-grid { grid-template-columns: repeat(2, 1fr); } }
+.blood-card {
+  background: var(--surface2); border-radius: var(--radius);
+  padding: 1.5rem 1rem; text-align: center; cursor: pointer;
+  border: 2px solid transparent;
+  transition: all var(--transition);
+  position: relative; overflow: hidden;
+}
+.blood-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-3px); }
+.blood-card.selected { border-color: var(--gold); box-shadow: 0 0 24px rgba(252,196,25,0.2); }
+.blood-card .type {
+  font-size: 2.5rem; font-weight: 800; margin-bottom: 0.3rem;
+}
+.blood-card .label { font-size: 0.9rem; color: var(--text2); }
+.blood-card .antigen {
+  margin-top: 0.75rem; font-size: 0.8rem; color: var(--text2);
+  display: flex; gap: 0.4rem; justify-content: center;
+}
+.blood-card .antigen .tag {
+  padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;
+}
+.blood-card .antigen .tag.a { background: rgba(77,171,247,0.2); color: var(--blood-a); }
+.blood-card .antigen .tag.b { background: rgba(240,101,149,0.2); color: var(--blood-b); }
+.blood-card .antigen .tag.rh { background: rgba(32,201,151,0.2); color: var(--blood-ab); }
+
+.blood-card.o .type { color: var(--blood-o); }
+.blood-card.a .type { color: var(--blood-a); }
+.blood-card.b .type { color: var(--blood-b); }
+.blood-card.ab .type { color: var(--blood-ab); }
+
+/* Compatibility matrix */
+.matrix-wrap { overflow-x: auto; margin: 2rem 0; }
+.matrix {
+  border-collapse: collapse; width: 100%; min-width: 420px;
+}
+.matrix th, .matrix td {
+  padding: 0.9rem 1rem; text-align: center;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: all var(--transition);
+}
+.matrix th {
+  font-weight: 700; font-size: 0.95rem;
+  background: var(--surface2);
+}
+.matrix th.donor { color: var(--text2); }
+.matrix th.recip { color: var(--text2); }
+.matrix td {
+  font-size: 1.3rem; cursor: default;
+}
+.matrix td.can { color: var(--yes); }
+.matrix td.cant { color: var(--no); opacity: 0.5; }
+.matrix td.hl { background: rgba(252,196,25,0.1); }
+.matrix tr:hover td { background: rgba(255,255,255,0.03); }
+
+/* Legend rows */
+.legend {
+  display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.85rem; color: var(--text2);
+}
+.legend-dot {
+  width: 12px; height: 12px; border-radius: 3px;
+}
+
+/* Interactive Donor Tester */
+.interactive-tester {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 2rem; margin: 2rem 0;
+}
+@media (max-width: 640px) { .interactive-tester { grid-template-columns: 1fr; } }
+.tester-panel {
+  background: var(--surface2); border-radius: var(--radius);
+  padding: 1.5rem; text-align: center;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.tester-panel h4 { margin-bottom: 1rem; font-size: 1rem; color: var(--text2); }
+.tester-buttons {
+  display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;
+  margin: 1rem 0;
+}
+.tester-btn {
+  padding: 0.6rem 1.2rem; border-radius: 8px; border: 2px solid transparent;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+  background: var(--surface); color: var(--text);
+  transition: all var(--transition);
+}
+.tester-btn:hover { border-color: rgba(255,255,255,0.2); }
+.tester-btn.active { border-color: var(--gold); background: rgba(252,196,25,0.1); }
+.tester-result {
+  margin-top: 1.5rem; display: flex; gap: 0.5rem;
+  justify-content: center; flex-wrap: wrap;
+}
+.result-chip {
+  padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.9rem;
+}
+.result-chip.can { background: rgba(81,207,102,0.15); color: var(--yes); }
+.result-chip.cant { background: rgba(255,107,107,0.1); color: var(--no); }
+
+/* The Lock & Key analogy - animated */
+.analogy-visual {
+  display: flex; align-items: center; justify-content: center;
+  gap: 2rem; flex-wrap: wrap; margin: 2rem 0;
+  padding: 2rem;
+  background: var(--surface2); border-radius: var(--radius);
+}
+.key-group, .lock-group {
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+.key, .lock {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; font-weight: 800;
+  transition: all 0.5s ease;
+}
+.key { background: var(--surface); border: 2px solid rgba(255,255,255,0.15); }
+.lock { background: var(--surface); border: 2px solid rgba(255,255,255,0.15); }
+.key.match { border-color: var(--yes); box-shadow: 0 0 16px rgba(81,207,102,0.3); }
+.lock.match { border-color: var(--yes); box-shadow: 0 0 16px rgba(81,207,102,0.3); }
+.key.no-match { border-color: var(--no); box-shadow: 0 0 16px rgba(255,107,107,0.2); }
+.lock.no-match { border-color: var(--no); box-shadow: 0 0 16px rgba(255,107,107,0.2); }
+.arrow-big { font-size: 2rem; color: var(--text2); }
+
+/* Quote */
+.quote-box {
+  background: linear-gradient(135deg, rgba(132,94,247,0.1), rgba(77,171,247,0.1));
+  border-left: 3px solid var(--gold); border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 2rem; margin: 2rem 0;
+}
+.quote-box .mark { font-size: 3rem; line-height: 0; color: var(--gold); }
+.quote-box .text {
+  font-size: 1.3rem; font-style: italic; margin: 0.5rem 0;
+}
+.quote-box .attr { color: var(--text2); font-size: 0.9rem; }
+
+/* Feature boxes */
+.features {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem; margin: 2rem 0;
+}
+.feature {
+  background: var(--surface2); border-radius: var(--radius);
+  padding: 1.5rem; border: 1px solid rgba(255,255,255,0.06);
+}
+.feature .icon { font-size: 2rem; margin-bottom: 0.75rem; }
+.feature h4 { margin-bottom: 0.5rem; }
+.feature p { color: var(--text2); font-size: 0.9rem; }
+
+/* Animations */
+.fade-up {
+  opacity: 0; transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+
+/* Footer */
+footer {
+  text-align: center; padding: 4rem 2rem;
+  color: var(--text2); font-size: 0.9rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+/* tooltip */
+.tooltip {
+  position: relative;
+}
+.tooltip::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface2); color: var(--text);
+  padding: 0.4rem 0.8rem; border-radius: 6px;
+  font-size: 0.8rem; white-space: nowrap;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--transition);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.tooltip:hover::after { opacity: 1; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">🩸 <span>ABO</span> Blood</div>
+  <div class="links">
+    <a href="#first-principles">公理</a>
+    <a href="#feynman">费曼</a>
+    <a href="#matrix">矩阵</a>
+    <a href="#interactive">交互</a>
+    <a href="#rh">Rh</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <h1>血型，<br>用<span class="feynman">费曼学习法</span><br>彻底弄懂</h1>
+  <p class="subtitle">从第一性原理推演 ABO 血型系统的全部输入输出关系。如果你不能简单地解释它，你还没有真正理解它。</p>
+  <div class="scroll-hint">↓ 向下探索</div>
+</section>
+
+<!-- Section 0: 第一性原理 -->
+<section id="first-principles">
+  <div class="section-title"><span class="num">0</span> 拆到公理</div>
+  <p class="section-desc">任何复杂系统的理解必须从不可再拆的基本事实开始。</p>
+
+  <div class="card">
+    <h3 style="margin-bottom:1rem">三公理</h3>
+    <div class="features">
+      <div class="feature">
+        <div class="icon">🏷️</div>
+        <h4>公理 1：身份牌</h4>
+        <p>红细胞表面有两种抗原——A 牌和 B 牌。每个人挂 0、1 或 2 张。</p>
+      </div>
+      <div class="feature">
+        <div class="icon">🛡️</div>
+        <h4>公理 2：守门员</h4>
+        <p>血浆里有抗 A 和抗 B 两种抗体。抗体专打"不是自己"的抗原。</p>
+      </div>
+      <div class="feature">
+        <div class="icon">⚖️</div>
+        <h4>公理 3：自洽原则</h4>
+        <p>你自己的守门员，永远不打你自己的身份牌。不然你活不到现在。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="blood-types-grid">
+    <div class="blood-card o" onclick="selectDonor('O')" id="card-o">
+      <div class="type">O</div>
+      <div class="label">无身份牌</div>
+      <div class="antigen">守门员: <span class="tag a">抗A</span><span class="tag b">抗B</span></div>
+    </div>
+    <div class="blood-card a" onclick="selectDonor('A')" id="card-a">
+      <div class="type">A</div>
+      <div class="label">挂 A 牌</div>
+      <div class="antigen"><span class="tag a">A</span> / 守门员: <span class="tag b">抗B</span></div>
+    </div>
+    <div class="blood-card b" onclick="selectDonor('B')" id="card-b">
+      <div class="type">B</div>
+      <div class="label">挂 B 牌</div>
+      <div class="antigen"><span class="tag b">B</span> / 守门员: <span class="tag a">抗A</span></div>
+    </div>
+    <div class="blood-card ab" onclick="selectDonor('AB')" id="card-ab">
+      <div class="type">AB</div>
+      <div class="label">挂 A+B 牌</div>
+      <div class="antigen"><span class="tag a">A</span><span class="tag b">B</span> / 守门员: 无</div>
+    </div>
+  </div>
+  <p style="text-align:center;color:var(--text2);margin-top:0.5rem">👆 点击血型卡片，下方矩阵高亮其结果</p>
+</section>
+
+<!-- Section 1: 费曼故事 -->
+<section id="feynman">
+  <div class="section-title"><span class="num">1</span> 费曼学习法：锁与钥匙</div>
+  <p class="section-desc">用一个 12 岁孩子都能懂的故事，把四型血的数学讲明白。</p>
+
+  <div class="card">
+    <div class="analogy-visual" id="analogy-viz">
+      <div class="key-group">
+        <div class="key" id="key-a" style="color:var(--blood-a)">🔑 A</div>
+        <div class="key" id="key-b" style="color:var(--blood-b)">🔑 B</div>
+      </div>
+      <div class="arrow-big">→</div>
+      <div class="lock-group">
+        <div class="lock" id="lock-a" style="color:var(--blood-a)">🔒 A</div>
+        <div class="lock" id="lock-b" style="color:var(--blood-b)">🔒 B</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin-top:1rem">
+      <button class="tester-btn" onclick="animateKeys('all-clear')">🟢 安全匹配</button>
+      <button class="tester-btn" onclick="animateKeys('a-vs-b')">🔴 A钥匙 → B锁</button>
+      <button class="tester-btn" onclick="animateKeys('b-vs-a')">🔴 B钥匙 → A锁</button>
+    </div>
+  </div>
+
+  <div class="quote-box">
+    <div class="mark">"</div>
+    <p class="text">想象红细胞穿了 T 恤，印着 A 或 B。血浆里两拨警察巡逻——一拨抓穿 A 恤的，一拨抓穿 B 恤的。输血就是把别人的红细胞放进你的警察堆。O 型光着身子谁也抓不到；AB 型的警察堆谁也不抓。就这么简单。</p>
+    <p class="attr">— 费曼式故事，讲给 12 岁孩子</p>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--gold)">
+    <h4 style="color:var(--gold);margin-bottom:0.5rem">🧠 核心规则（剃刀版）</h4>
+    <p style="font-size:1.15rem;font-weight:600;margin-bottom:0.5rem">
+      供血者的牌 ∩ 受血者的守门员 = 空集 → 能输
+    </p>
+    <p style="color:var(--text2);font-size:0.9rem">输血只看"红细胞给谁"，基本不看"血浆给谁"——输入的血浆量太小，被大量受血者血浆稀释，守门员不够用。</p>
+  </div>
+</section>
+
+<!-- Section 2: 兼容性矩阵 -->
+<section id="matrix">
+  <div class="section-title"><span class="num">2</span> 完整输入输出矩阵</div>
+  <p class="section-desc">行 = 供血者（DONOR），列 = 受血者（RECIPIENT）。点击任意血型卡片来高亮对应行。</p>
+
+  <div class="card">
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th class="donor">供 ╲ 受</th>
+            <th class="recip">O</th>
+            <th class="recip">A</th>
+            <th class="recip">B</th>
+            <th class="recip">AB</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr data-donor="O">
+            <td><strong>O</strong>&nbsp;&nbsp;无牌</td>
+            <td class="can">✅</td><td class="can">✅</td><td class="can">✅</td><td class="can">✅</td>
+          </tr>
+          <tr data-donor="A">
+            <td><strong>A</strong>&nbsp;&nbsp;A牌</td>
+            <td class="cant">❌</td><td class="can">✅</td><td class="cant">❌</td><td class="can">✅</td>
+          </tr>
+          <tr data-donor="B">
+            <td><strong>B</strong>&nbsp;&nbsp;B牌</td>
+            <td class="cant">❌</td><td class="cant">❌</td><td class="can">✅</td><td class="can">✅</td>
+          </tr>
+          <tr data-donor="AB">
+            <td><strong>AB</strong>&nbsp;&nbsp;AB牌</td>
+            <td class="cant">❌</td><td class="cant">❌</td><td class="cant">❌</td><td class="can">✅</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--yes)"></div> 可输血</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--no)"></div> 不可输血</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gold);opacity:0.5"></div> 高亮行</div>
+    </div>
+  </div>
+
+  <div style="margin-top:2rem">
+    <h4 style="margin-bottom:1rem">为什么？（逐行说人话）</h4>
+    <div class="features">
+      <div class="feature" style="border-left:3px solid var(--blood-o)">
+        <div class="icon">🅾️</div>
+        <h4>O 型 → 万能供血者</h4>
+        <p>红细胞没牌，谁的守门员都不认识它。所以谁都能接 O 型血。</p>
+      </div>
+      <div class="feature" style="border-left:3px solid var(--blood-a)">
+        <div class="icon">🅰️</div>
+        <h4>A 型 → 只能给 A 和 AB</h4>
+        <p>A 红细胞挂 A 牌。O 和 B 的血浆有抗 A 守门员，会攻击。AB 没有抗 A，A 自己也没有——安全。</p>
+      </div>
+      <div class="feature" style="border-left:3px solid var(--blood-b)">
+        <div class="icon">🅱️</div>
+        <h4>B 型 → 只能给 B 和 AB</h4>
+        <p>对称推理：B 牌被 O 和 A 的守门员攻击。只有 B 和 AB 安全。</p>
+      </div>
+      <div class="feature" style="border-left:3px solid var(--blood-ab)">
+        <div class="icon">🆎</div>
+        <h4>AB 型 → 万能受血者</h4>
+        <p>AB 血浆没有守门员——来者不拒。但 AB 的红细胞挂了两张牌，给谁都会被攻击，只能给 AB。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 3: 交互式测试 -->
+<section id="interactive">
+  <div class="section-title"><span class="num">3</span> 自己试试</div>
+  <p class="section-desc">选一个供血者和受血者，看看能不能输。</p>
+
+  <div class="interactive-tester">
+    <div class="tester-panel">
+      <h4>🩸 选供血者 (Donor)</h4>
+      <div class="tester-buttons">
+        <button class="tester-btn" onclick="setDonor('O')" id="btn-d-O">O</button>
+        <button class="tester-btn" onclick="setDonor('A')" id="btn-d-A">A</button>
+        <button class="tester-btn" onclick="setDonor('B')" id="btn-d-B">B</button>
+        <button class="tester-btn" onclick="setDonor('AB')" id="btn-d-AB">AB</button>
+      </div>
+      <div class="tester-result" id="donor-result"></div>
+    </div>
+    <div class="tester-panel">
+      <h4>🏥 选受血者 (Recipient)</h4>
+      <div class="tester-buttons">
+        <button class="tester-btn" onclick="setRecipient('O')" id="btn-r-O">O</button>
+        <button class="tester-btn" onclick="setRecipient('A')" id="btn-r-A">A</button>
+        <button class="tester-btn" onclick="setRecipient('B')" id="btn-r-B">B</button>
+        <button class="tester-btn" onclick="setRecipient('AB')" id="btn-r-AB">AB</button>
+      </div>
+      <div class="tester-result" id="recipient-result"></div>
+    </div>
+  </div>
+  <div class="card" style="text-align:center" id="verdict-card">
+    <div style="font-size:1.5rem;margin-bottom:0.5rem" id="verdict-icon">👆</div>
+    <div style="font-size:1.3rem;font-weight:700;margin-bottom:0.5rem" id="verdict-text">选一个供血者和受血者</div>
+    <div style="color:var(--text2);font-size:0.95rem" id="verdict-reason"></div>
+  </div>
+</section>
+
+<!-- Section 4: Rh 因子 -->
+<section id="rh">
+  <div class="section-title"><span class="num">4</span> 再加一层：Rh 因子</div>
+  <p class="section-desc">除了 ABO，红细胞上还有第三张牌——Rh 抗原。</p>
+
+  <div class="card">
+    <div class="features">
+      <div class="feature">
+        <div class="icon">➕</div>
+        <h4>Rh+（阳性）</h4>
+        <p>红细胞上有 Rh 牌。约 85% 的人是 Rh+。</p>
+      </div>
+      <div class="feature">
+        <div class="icon">➖</div>
+        <h4>Rh-（阴性）</h4>
+        <p>红细胞上没有 Rh 牌。约 15%。Rh- 被 Rh+ 血"致敏"后会产生抗 Rh 抗体。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--blood-ab)">
+    <h4 style="margin-bottom:0.75rem">🏆 叠加 Rh 后的极限两端</h4>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap">
+      <div style="flex:1;background:rgba(132,94,247,0.1);padding:1.5rem;border-radius:var(--radius);text-align:center">
+        <div style="font-size:3rem">🅾️➖</div>
+        <div style="font-weight:700;font-size:1.2rem;margin:0.5rem 0">O- = 万能供血者</div>
+        <div style="color:var(--text2);font-size:0.9rem">零张牌（无 A、无 B、无 Rh）——谁都能接</div>
+      </div>
+      <div style="flex:1;background:rgba(32,201,151,0.1);padding:1.5rem;border-radius:var(--radius);text-align:center">
+        <div style="font-size:3rem">🆎➕</div>
+        <div style="font-weight:700;font-size:1.2rem;margin:0.5rem 0">AB+ = 万能受血者</div>
+        <div style="color:var(--text2);font-size:0.9rem">零守门员（无抗 A、无抗 B、无抗 Rh）——谁的血都能接</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>🦞 Ariste · 2026-05-23 · 费曼学习法 × ABO 血型系统</p>
+  <p style="margin-top:0.5rem;font-size:0.8rem">如果你不能简单地解释它，你还没有真正理解它。—— Richard Feynman</p>
+</footer>
+
+<script>
+// --- Donor selection highlighting ---
+function selectDonor(type) {
+  document.querySelectorAll('.blood-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('card-' + type.toLowerCase()).classList.add('selected');
+  document.querySelectorAll('.matrix tr[data-donor]').forEach(r => r.querySelectorAll('td').forEach(td => td.classList.remove('hl')));
+  const row = document.querySelector('.matrix tr[data-donor="' + type + '"]');
+  if (row) row.querySelectorAll('td').forEach(td => td.classList.add('hl'));
+}
+
+// --- Interactive Tester ---
+let donor = null, recipient = null;
+const compat = {
+  O: {O:true, A:true, B:true, AB:true},
+  A: {O:false, A:true, B:false, AB:true},
+  B: {O:false, A:false, B:true, AB:true},
+  AB: {O:false, A:false, B:false, AB:true}
+};
+const reasons = {
+  'O_O': 'O 没挂牌，O 的守门员不认识——安全。',
+  'O_A': 'O 没挂牌，A 没有抗 O 守门员——安全。',
+  'O_B': 'O 没挂牌，B 没有抗 O 守门员——安全。',
+  'O_AB': 'O 没挂牌，AB 没有守门员——安全。',
+  'A_O': '❌ A 红细胞有 A 牌，O 血浆有抗 A 守门员——攻击！',
+  'A_A': 'A 红细胞有 A 牌，A 血浆没有抗 A 守门员——安全。',
+  'A_B': '❌ A 红细胞有 A 牌，B 血浆有抗 A 守门员——攻击！',
+  'A_AB': 'A 红细胞有 A 牌，AB 血浆没有守门员——安全。',
+  'B_O': '❌ B 红细胞有 B 牌，O 血浆有抗 B 守门员——攻击！',
+  'B_A': '❌ B 红细胞有 B 牌，A 血浆有抗 B 守门员——攻击！',
+  'B_B': 'B 红细胞有 B 牌，B 血浆没有抗 B 守门员——安全。',
+  'B_AB': 'B 红细胞有 B 牌，AB 血浆没有守门员——安全。',
+  'AB_O': '❌ AB 红细胞有 A+B 牌，O 有抗 A+抗 B——双重攻击！',
+  'AB_A': '❌ AB 红细胞有 A+B 牌，A 有抗 B 守门员——攻击 B 牌！',
+  'AB_B': '❌ AB 红细胞有 A+B 牌，B 有抗 A 守门员——攻击 A 牌！',
+  'AB_AB': 'AB 红细胞有 A+B 牌，AB 血浆没有守门员——安全。',
+};
+
+function setDonor(type) {
+  donor = type;
+  document.querySelectorAll('[id^="btn-d-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-d-' + type).classList.add('active');
+  updateVerdict();
+  updateDonorInfo(type);
+}
+
+function setRecipient(type) {
+  recipient = type;
+  document.querySelectorAll('[id^="btn-r-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-r-' + type).classList.add('active');
+  updateVerdict();
+  updateRecipientInfo(type);
+}
+
+function updateDonorInfo(type) {
+  const r = document.getElementById('donor-result');
+  const recipients = ['O','A','B','AB'];
+  r.innerHTML = recipients.map(rr => {
+    const ok = compat[type][rr];
+    return `<span class="result-chip ${ok ? 'can' : 'cant'}">${ok ? '✅' : '❌'} → ${rr}</span>`;
+  }).join('');
+}
+
+function updateRecipientInfo(type) {
+  const r = document.getElementById('recipient-result');
+  const donors = ['O','A','B','AB'];
+  r.innerHTML = donors.map(d => {
+    const ok = compat[d][type];
+    return `<span class="result-chip ${ok ? 'can' : 'cant'}">${ok ? '✅' : '❌'} ${d} →</span>`;
+  }).join('');
+}
+
+function updateVerdict() {
+  const icon = document.getElementById('verdict-icon');
+  const text = document.getElementById('verdict-text');
+  const reason = document.getElementById('verdict-reason');
+  if (!donor || !recipient) return;
+  const ok = compat[donor][recipient];
+  icon.textContent = ok ? '✅' : '❌';
+  text.textContent = ok
+    ? `${donor} 型 可以输给 ${recipient} 型`
+    : `${donor} 型 不能输给 ${recipient} 型`;
+  reason.textContent = reasons[donor + '_' + recipient];
+  document.getElementById('verdict-card').style.borderLeft = ok ? '3px solid var(--yes)' : '3px solid var(--no)';
+}
+
+// --- Key/Lock animation ---
+function animateKeys(scenario) {
+  const keyA = document.getElementById('key-a');
+  const keyB = document.getElementById('key-b');
+  const lockA = document.getElementById('lock-a');
+  const lockB = document.getElementById('lock-b');
+  [keyA, keyB, lockA, lockB].forEach(el => {
+    el.classList.remove('match', 'no-match');
+  });
+  setTimeout(() => {
+    if (scenario === 'all-clear') {
+      keyA.classList.add('match'); lockA.classList.add('match');
+      keyB.classList.add('match'); lockB.classList.add('match');
+    } else if (scenario === 'a-vs-b') {
+      keyA.classList.add('no-match'); lockB.classList.add('no-match');
+    } else if (scenario === 'b-vs-a') {
+      keyB.classList.add('no-match'); lockA.classList.add('no-match');
+    }
+  }, 50);
+}
+
+// --- Scroll animations ---
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Initial state
+selectDonor('O');
+setDonor('O');
+setRecipient('A');
+</script>
+</body>
+</html>
